@@ -1,0 +1,2 @@
+rinominare la cartella in ".vscode"
+e controllare i percorsi dentro i file json
