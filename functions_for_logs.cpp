@@ -13,8 +13,8 @@ using namespace std;
 void error_log(string errorname ) {         //FUNZIONE DI DEBUG ()
 
     string file_err_name = "scacchiera_log.txt";
-    FILE* log_file;
-    if (fopen_s(&log_file, file_err_name.c_str(), "a+") != 0) {
+    FILE* log_file = fopen(file_err_name.c_str(), "a+");
+    if (log_file != 0) {
         cout << "errore nell'apertura/scrittura del file " << endl;
     }
     else {

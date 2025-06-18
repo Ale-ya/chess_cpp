@@ -1,5 +1,7 @@
 # Lista delle posizioni
 
+import socket
+
 listaposizioni_A = [
     (296.39, -66.31), (276.64, -67.56), (257.72, -67.72), (237.76, -69.3),
     (217.95, -69.73), (197.09, -70.74), (177.15, -71.37), (155.98, -72.68)
@@ -13,7 +15,17 @@ xinputf = 2
 yinputf = 2
 take = False
 
-
+def sbustamento(messg):
+    
+    lista_messaggi = messg.split(";")
+    print(lista_messaggi)
+    booltake = False
+    if "true" in lista_messaggi:
+        booltake = True
+    
+    
+    return int(lista_messaggi[0]), int(lista_messaggi[1]), booltake, int(lista_messaggi[3]), int(lista_messaggi[4]) 
+    
 def start_tcp_server(host='192.168.2.170', port=65432):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.bind((host, port))
@@ -31,15 +43,15 @@ def start_tcp_server(host='192.168.2.170', port=65432):
                 # Decodifica i dati ricevuti
                 try:
                     data_decoded = data.decode('utf-8')  # Usare UTF-8 per la decodifica
-                    char1, char2, num1, num2 = data_decoded.split(',')
+                    xi, yi, take, xif, yif = sbustamento(data_decoded)
 
-                    print("Ricevuto: " + str(char1) + str(char2) + str(num1) + str(num2))
+                    print("Ricevuto: " + str(xi) + str(yi) + str(take) + str(xif)+ str(yif))
                     break
                 except Exception as e:
                     print("Errore nella decodifica dei dati:", e)
-                    return 0, 0, 0, 0  # Restituisci valori di default in caso di errore
+                    return 0, 0, False, 0, 0  # Restituisci valori di default in caso di errore
 
-    return int(char1), int(char2), int(num1), int(num2)
+    return xi, yi, take, xif, yif 
 
 
 def move():
@@ -152,7 +164,7 @@ def forza_pinza(forza, boolvalue):
 
 
 # Esegui la connessione TCP e ottieni i valori
-xinput, yinput, xinputf, yinputf = start_tcp_server(host='192.168.2.170', port=65432)
+xinput, yinput, take, xinputf, yinputf = start_tcp_server(host='192.168.2.170', port=65432)
 
 # Muovi il robot in base ai valori ricevuti
 if take:

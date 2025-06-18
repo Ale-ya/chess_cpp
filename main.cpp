@@ -5,6 +5,12 @@
 #include <algorithm>
 #include "functions_for_logs.h"
 #include "pieces.h"
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <thread>
+#include "chess_server_.h"
 using namespace std;
 
 #define lung_righe 8
@@ -23,6 +29,8 @@ class Scacchiera {
 
 private:
     pieces  *scacchiera[lung_colon][lung_righe];        //matrice per garantire una logica solida e facile da gestire
+    Myclient clientscacchiera{6000, "127.0.0.1", false};    //impostare a true per avere il debug 
+    thread client_scacchi;
     bool checkmate;                                     //valore boolean per lo scacco matto (per il fine partita) (non ancora implementato correttamente)(work in progress)
     bool check;
     bool turno;                                         //per poi gestire i turni 
@@ -184,17 +192,49 @@ private:
                 checkmate = true;
                 //return true;
             }
+            /*agg*/
+            try
+            {
+                string converter = to_string(S_row);
+                clientscacchiera.push_value_to_send(converter);
+                converter = to_string(S_collumn);
+                clientscacchiera.push_value_to_send(converter);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            if (scacchiera[F_row][F_collumn] != nullptr)
+            {
+                clientscacchiera.push_value_to_send("true");
+            }else{
+                clientscacchiera.push_value_to_send("false");
+            }
+            try
+            {
+                string converter = to_string(F_row);
+                clientscacchiera.push_value_to_send(converter);
+                converter = to_string(F_collumn);
+                clientscacchiera.push_value_to_send(converter);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            /*agg*/
             scacchiera[F_row][F_collumn] = scacchiera[S_row][S_collumn];        //classico swap dei valori
             scacchiera[S_row][S_collumn] = nullptr;
             return true;
+            
         }
         else {
             return false;
         }
+        return false;
     }
     
 public:
-    //costruttore
+    // costruttore
     Scacchiera() {
         checkmate = false;          /*WORK IN PROGRESS*/
         check = false;
@@ -202,6 +242,18 @@ public:
         set_basic_chessboard();
         set_basic_disposition();
     }
+    // Scacchiera() : clientscacchiera(6000, "127.0.0.1"),  // <-- qui
+    //   checkmate(false),
+    //   check(false),
+    //   turno(false)
+    // {
+    //     set_basic_chessboard();
+    //     set_basic_disposition();
+    // }
+    void start_thread(){
+        client_scacchi = thread(&Myclient::init, &clientscacchiera);
+    }
+
     //distruttore 
     ~Scacchiera() {
         for (int i = 0; i < lung_righe; ++i) {
@@ -210,6 +262,7 @@ public:
                 scacchiera[i][j] = nullptr; //opzionale ma consigliato per evitare errori (gestione della memoria in particolare)   (messo per sicurezza aggiuntiva)
             }
         }
+        client_scacchi.join();  
     }
 
     //  SET METHODS 
@@ -272,14 +325,16 @@ public:
 int main()
 {
     Scacchiera game;
-    console_cleaner();      //alcuni compilatori o ide ne hanno bisongo per far funzionare la stampa
+    //console_cleaner();      //alcuni compilatori o ide ne hanno bisongo per far funzionare la stampa
+    game.start_thread();
     do {    // parte il bianco (blu) per primo (false)
         game.print();
         game.try_newMove();
         game.set_turn();
-        console_cleaner();
+        //console_cleaner();
 
     } while (!game.get_checkmate_value());
+    
     cout << endl << "== FINE PROGRAMMA ==" << endl; //fine programma andr� aggiunto il risultato su file (json) (work in progress)
     return 0;
 }
